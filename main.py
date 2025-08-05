@@ -1,5 +1,5 @@
 # ✅ 直接寫入 token 和 database ID（⚠️ 僅限測試）
-# NOTION_TOKEN = "secret_ntn_Eq42642401088NbxGGoTVevHnW4eOJ94SCEkrBwOtjy9gQ"  
+# NOTION_TOKEN = "ntn_Eq42642401088NbxGGoTVevHnW4eOJ94SCEkrBwOtjy9gQ"  
 # NOTION_DATABASE_ID = "2450196ab6ca8037b2e4c4f6f1537649"  # 請替換為你的資料庫 ID
 
 # main.py
@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import sys
 
 # ✅ 直接寫入 token 和 database ID（⚠️ 僅限測試）
-NOTION_TOKEN = "secret_ntn_Eq42642401088NbxGGoTVevHnW4eOJ94SCEkrBwOtjy9gQ"  # 請替換為你的 token
+NOTION_TOKEN = "ntn_Eq42642401088NbxGGoTVevHnW4eOJ94SCEkrBwOtjy9gQ"  # 請替換為你的 token
 NOTION_DATABASE_ID = "2450196ab6ca8037b2e4c4f6f1537649"  # 請替換為你的資料庫 ID
 
 HEADERS = {
