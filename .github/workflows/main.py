@@ -1,143 +1,142 @@
 # ✅ 直接寫入 token 和 database ID（⚠️ 僅限測試）
 # NOTION_TOKEN = "secret_ntn_Eq42642401088NbxGGoTVevHnW4eOJ94SCEkrBwOtjy9gQ"  
 # NOTION_DATABASE_ID = "2450196ab6ca8037b2e4c4f6f1537649"  # 請替換為你的資料庫 ID
-
 # main.py
-import feedparser
+import os
 import requests
-from datetime import datetime, timedelta
-import sys
+import feedparser
+import logging
+from datetime import datetime
+from dateutil import parser as date_parser
 
-# ✅ 直接寫入 token 和 database ID（⚠️ 僅限測試）
-NOTION_TOKEN = "secret_ntn_Eq42642401088NbxGGoTVevHnW4eOJ94SCEkrBwOtjy9gQ"  # 請替換為你的 token
-NOTION_DATABASE_ID = "2450196ab6ca8037b2e4c4f6f1537649"  # 請替換為你的資料庫 ID
+# --- 設定 ---
+# 從環境變數讀取機敏資訊
+NOTION_TOKEN = os.getenv('NOTION_TOKEN')
+DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 
+# 要訂閱的 RSS Feed 列表
+RSS_FEEDS = {
+    "Bloomberg": "https://www.bloomberg.com/opinion/authors/ARbTQlRLRjE/matthew-s-levine.rss",
+    "SupplyChainDive": "https://www.supplychaindive.com/rss/",
+    "CFODive": "https://www.cfodive.com/rss/",
+}
+
+# 設定日誌
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Notion API 的基本設定
+NOTION_API_URL = "https://api.notion.com/v1/"
 HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
     "Content-Type": "application/json",
-    "Notion-Version": "2022-06-28"
+    "Notion-Version": "2022-06-28",
 }
 
-# 設定要讀取的 RSS 清單（職位對應分類）
-RSS_FEEDS = [
-    {"職位": "CEO", "分類": "全球財經", "url": "https://www.bloomberg.com/feed"},
-    {"職位": "COO", "分類": "供應鏈動態", "url": "https://www.supplychaindive.com/rss/"},
-    {"職位": "CFO", "分類": "財務與會計策略", "url": "https://www.cfodive.com/rss/"},
-    {"職位": "CTO", "分類": "技術策略", "url": "https://feed.infoq.com/"},
-    {"職位": "CIO", "分類": "資安治理", "url": "https://www.cio.com/index.rss"},
-]
+# --- 核心函式 ---
 
-now = datetime.utcnow()
-seven_days_ago = now - timedelta(days=30)
+def check_env_vars():
+    """檢查必要的環境變數是否存在"""
+    if not NOTION_TOKEN:
+        logging.error("🚫 缺少環境變數：NOTION_TOKEN")
+        return False
+    if not DATABASE_ID:
+        logging.error("🚫 缺少環境變數：NOTION_DATABASE_ID")
+        return False
+    return True
 
-# 寫入 log 到 Notion 表格
-def write_log_to_notion(message):
+def get_existing_urls_from_notion() -> set:
+    """從 Notion Database 取得所有已存在的 URL，用於防止重複寫入"""
+    existing_urls = set()
+    query_url = f"{NOTION_API_URL}databases/{DATABASE_ID}/query"
+    
     try:
-        payload = {
-            "parent": {"database_id": NOTION_DATABASE_ID},
-            "properties": {
-                "標題": {"title": [{"text": {"content": f"📋 Log: {message[:50]}"}}]},
-                "摘要": {"rich_text": [{"text": {"content": message}}]},
-                "分類": {"select": {"name": "log"}},
-                "適合主管": {"select": {"name": "System"}},
-                "連結": {"url": "https://example.com/log"},
-                "登錄日期": {"date": {"start": now.strftime("%Y-%m-%d")}},
-                "事件發生日期": {"date": {"start": now.strftime("%Y-%m-%d")}},
-                "該注意哪些？": {"rich_text": [{"text": {"content": "系統自動記錄"}}]}
-            }
-        }
-        res = requests.post("https://api.notion.com/v1/pages", headers=HEADERS, json=payload)
-        res.raise_for_status()
-        print(f"🪵 寫入 log 至 Notion 成功：{message}")
-    except Exception as e:
-        print(f"🛑 log 寫入失敗：{e}")
-
-# 檢查 Notion 是否已經有該條目（用 URL 當唯一鍵）
-def is_duplicate(url):
-    try:
-        search_url = f"https://api.notion.com/v1/databases/{NOTION_DATABASE_ID}/query"
-        payload = {
-            "filter": {
-                "property": "連結",
-                "url": {"equals": url}
-            }
-        }
-        response = requests.post(search_url, headers=HEADERS, json=payload)
-        response.raise_for_status()
+        response = requests.post(query_url, headers=HEADERS)
+        response.raise_for_status()  # 如果請求失敗 (如 401, 404), 會拋出例外
+        
         data = response.json()
-        return len(data.get("results", [])) > 0
-    except Exception as e:
-        msg = f"⚠️ 查重失敗: {e}"
-        print(msg)
-        write_log_to_notion(msg)
-        return False
+        for page in data.get("results", []):
+            properties = page.get("properties", {})
+            url_property = properties.get("URL", {})
+            if url_property and url_property.get("url"):
+                existing_urls.add(url_property["url"])
+        
+        logging.info(f"✅ 成功從 Notion 取得 {len(existing_urls)} 筆已存在的 URL")
+        return existing_urls
+    except requests.exceptions.RequestException as e:
+        logging.error(f"🛑 查詢 Notion 資料庫失敗: {e}")
+        # 如果無法連接Notion，返回一個空集合，避免後續流程完全中斷，但會失去防重功能
+        return set()
 
-# 將資料寫入 Notion
-def create_page(item, 職位, 分類):
-    try:
-        pub_date = datetime(*item.published_parsed[:6]).strftime("%Y.%m.%d")
-        payload = {
-            "parent": {"database_id": NOTION_DATABASE_ID},
-            "properties": {
-                "登錄日期": {"date": {"start": now.strftime("%Y-%m-%d")}},
-                "事件發生日期": {"date": {"start": datetime(*item.published_parsed[:6]).strftime("%Y-%m-%d")}},
-                "摘要": {"rich_text": [{"text": {"content": item.get("summary", "")[:500]}}]},
-                "標題": {"title": [{"text": {"content": item.title}}]},
-                "分類": {"select": {"name": 分類}},
-                "適合主管": {"select": {"name": 職位}},
-                "連結": {"url": item.link},
-                "該注意哪些？": {"rich_text": [{"text": {"content": "待補充（可用 AI 自動摘要生成）"}}]}
-            }
-        }
-        res = requests.post("https://api.notion.com/v1/pages", headers=HEADERS, json=payload)
-        res.raise_for_status()
-        print(f"✅ 寫入成功：{item.title}")
-        return True
-    except Exception as e:
-        msg = f"❌ 寫入失敗：{item.title}，錯誤：{e}"
-        print(msg)
-        write_log_to_notion(msg)
-        return False
+def add_entry_to_notion(source: str, entry: dict):
+    """將單筆 RSS 項目新增至 Notion Database"""
+    create_page_url = f"{NOTION_API_URL}pages"
+    
+    # 從 entry 中提取資訊
+    title = entry.get("title", "無標題")
+    link = entry.get("link", "")
+    # 使用 date_parser 處理多種日期格式
+    published_str = entry.get("published", datetime.now().isoformat())
+    published_dt = date_parser.parse(published_str)
 
-# 測試是否能寫入 Notion
-try:
-    test_payload = {
-        "parent": {"database_id": NOTION_DATABASE_ID},
+    # 建立 Notion Page 的資料結構 (Payload)
+    # **請確保您的 Notion Database 屬性名稱與這裡的 key 一致**
+    payload = {
+        "parent": {"database_id": DATABASE_ID},
         "properties": {
-            "標題": {"title": [{"text": {"content": "✅ 測試：Notion 寫入測試"}}]},
-            "摘要": {"rich_text": [{"text": {"content": f"執行於 {now.strftime('%Y-%m-%d %H:%M:%S')} UTC"}}]},
-            "分類": {"select": {"name": "技術策略"}},
-            "適合主管": {"select": {"name": "CTO"}},
-            "連結": {"url": "https://example.com/test-log"},
-            "登錄日期": {"date": {"start": now.strftime("%Y-%m-%d")}},
-            "事件發生日期": {"date": {"start": now.strftime("%Y-%m-%d")}},
-            "該注意哪些？": {"rich_text": [{"text": {"content": "僅供測試用途"}}]}
+            "標題": {
+                "title": [{"text": {"content": title}}]
+            },
+            "URL": {
+                "url": link
+            },
+            "來源": {
+                "select": {"name": source}
+            },
+            "發布時間": {
+                "date": {"start": published_dt.isoformat()}
+            }
         }
     }
-    test_res = requests.post("https://api.notion.com/v1/pages", headers=HEADERS, json=test_payload)
-    test_res.raise_for_status()
-    print("📝 成功寫入測試 log 至 Notion")
-except Exception as e:
-    msg = f"🚫 測試 log 寫入失敗：{e}"
-    print(msg)
-    write_log_to_notion(msg)
 
-# 執行主邏輯
-for feed in RSS_FEEDS:
     try:
-        print(f"📡 處理來源：{feed['url']}")
-        d = feedparser.parse(feed["url"])
-        print(f"🔍 共取得 {len(d.entries)} 筆資料")
-        for entry in d.entries:
-            if hasattr(entry, "published_parsed"):
-                pub_dt = datetime(*entry.published_parsed[:6])
-                print(f"  • ⏰ 發布時間：{pub_dt.strftime('%Y-%m-%d')}, 標題：{entry.title}")
-                if pub_dt >= seven_days_ago:
-                    if not is_duplicate(entry.link):
-                        create_page(entry, feed["職位"], feed["分類"])
-                    else:
-                        print("🔁 跳過重複：", entry.title)
-    except Exception as e:
-        msg = f"❌ RSS 來源處理失敗：{feed['url']}，錯誤：{e}"
-        print(msg)
-        write_log_to_notion(msg)
+        response = requests.post(create_page_url, headers=HEADERS, json=payload)
+        response.raise_for_status()
+        logging.info(f"✅ 成功新增文章到 Notion: {title}")
+        return True
+    except requests.exceptions.RequestException as e:
+        logging.error(f"🛑 新增文章到 Notion 失敗: {title} | 錯誤: {e.response.text}")
+        return False
+
+def main():
+    """主執行函式"""
+    logging.info("🚀 開始執行 RSS to Notion 腳本...")
+    
+    if not check_env_vars():
+        return # 如果缺少環境變數，直接結束
+
+    existing_urls = get_existing_urls_from_notion()
+    new_entries_count = 0
+
+    for source_name, feed_url in RSS_FEEDS.items():
+        logging.info(f"📡 正在處理來源: {source_name} ({feed_url})")
+        feed = feedparser.parse(feed_url)
+        
+        if feed.bozo:
+            logging.warning(f"⚠️ 解析來源 {source_name} 時可能發生問題: {feed.bozo_exception}")
+
+        entries = feed.entries
+        logging.info(f"🔍 從 {source_name} 取得 {len(entries)} 筆資料")
+
+        for entry in entries:
+            if entry.link not in existing_urls:
+                if add_entry_to_notion(source_name, entry):
+                    new_entries_count += 1
+                    # 將新增成功的 url 加入集合，避免同一次運行中重複添加
+                    existing_urls.add(entry.link)
+            else:
+                logging.info(f"🔄 跳過已存在文章: {entry.title}")
+
+    logging.info(f"🎉 任務完成！本次共新增 {new_entries_count} 筆新文章。")
+
+if __name__ == "__main__":
+    main()
