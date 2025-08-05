@@ -47,27 +47,24 @@ def is_duplicate(url):
 # 將資料寫入 Notion
 def create_page(item, 職位, 分類):
     try:
-        pub_date = datetime(*item.published_parsed[:6]).strftime("%Y.%m.%d")
-        payload = {
-            "parent": {"database_id": NOTION_DATABASE_ID},
-            "properties": {
-                "登錄日期": {"date": {"start": now.strftime("%Y-%m-%d")}},
-                "事件發生日期": {"date": {"start": datetime(*item.published_parsed[:6]).strftime("%Y-%m-%d")}},
-                "摘要": {"rich_text": [{"text": {"content": item.get("summary", "")[:500]}}]},
-                "標題": {"title": [{"text": {"content": item.title}}]},
-                "分類": {"select": {"name": 分類}},
-                "適合主管": {"select": {"name": 職位}},
-                "連結": {"url": item.link},
-                "該注意哪些？": {"rich_text": [{"text": {"content": "待補充（可用 AI 自動摘要生成）"}}]}
-            }
+    test_payload = {
+        "parent": {"database_id": NOTION_DATABASE_ID},
+        "properties": {
+            "標題": {"title": [{"text": {"content": "✅ 測試：Notion 寫入測試"}}]},
+            "摘要": {"rich_text": [{"text": {"content": f"執行於 {now.strftime('%Y-%m-%d %H:%M:%S')} UTC"}}]},
+            "分類": {"select": {"name": "技術策略"}},
+            "適合主管": {"select": {"name": "CTO"}},
+            "連結": {"url": "https://example.com/test-log"},
+            "登錄日期": {"date": {"start": now.strftime("%Y-%m-%d")}},
+            "事件發生日期": {"date": {"start": now.strftime("%Y-%m-%d")}},
+            "該注意哪些？": {"rich_text": [{"text": {"content": "僅供測試用途"}}]}
         }
-        res = requests.post("https://api.notion.com/v1/pages", headers=HEADERS, json=payload)
-        res.raise_for_status()
-        print(f"✅ 寫入成功：{item.title}")
-        return True
-    except Exception as e:
-        print(f"❌ 寫入失敗：{item.title}，錯誤：{e}")
-        return False
+    }
+    test_res = requests.post("https://api.notion.com/v1/pages", headers=HEADERS, json=test_payload)
+    test_res.raise_for_status()
+    print("📝 成功寫入測試 log 至 Notion")
+except Exception as e:
+    print(f"🚫 測試 log 寫入失敗：{e}")
 
 # 執行主邏輯
 for feed in RSS_FEEDS:
