@@ -16,11 +16,10 @@ MAX_ENTRIES_PER_RUN = int(os.getenv('MAX_ENTRIES_PER_RUN', '100'))
 
 RSS_FEEDS = {
     "Bloomberg": "https://www.bloomberg.com/opinion/authors/ARbTQlRLRjE/matthew-s-levine.rss",
+    "Harvard Business Review": "https://hbr.org/rss/regular",
     "SupplyChainDive": "https://www.supplychaindive.com/rss/",
     "CFODive": "https://www.cfodive.com/rss/",
-    "Hacker News": "https://news.ycombinator.com/rss",
     "TechCrunch": "https://techcrunch.com/feed/",
-    "Harvard Business Review": "https://hbr.org/rss/regular",
     "Wall Street Journal": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
 }
 
