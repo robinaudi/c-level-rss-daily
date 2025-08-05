@@ -9,6 +9,7 @@ import sys
 try:
     NOTION_TOKEN = os.environ["NOTION_TOKEN"]
     NOTION_DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
+    print("✅ 已成功讀取 NOTION_TOKEN 和 NOTION_DATABASE_ID")
 except KeyError as e:
     print(f"❌ 缺少必要的環境變數：{e}")
     sys.exit(1)
