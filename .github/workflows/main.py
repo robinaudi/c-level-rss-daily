@@ -2,16 +2,11 @@
 import feedparser
 import requests
 from datetime import datetime, timedelta
-import os
 import sys
 
-# ✅ 讀取環境變數，加入錯誤提示
-try:
-    NOTION_TOKEN = os.environ["NOTION_TOKEN"]
-    NOTION_DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
-except KeyError as e:
-    print(f"❌ 缺少必要的環境變數：{e}")
-    sys.exit(1)
+# ✅ 直接寫入 token 和 database ID（⚠️ 僅限測試）
+NOTION_TOKEN = "ntn_Eq42642401088NbxGGoTVevHnW4eOJ94SCEkrBwOtjy9gQ"  # 請替換為你的 token
+NOTION_DATABASE_ID = "2450196ab6ca8037b2e4c4f6f1537649"  # 請替換為你的資料庫 ID
 
 HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
