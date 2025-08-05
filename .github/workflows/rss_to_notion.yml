@@ -1,0 +1,39 @@
+# .github/workflows/rss_to_notion.yml
+name: RSS to Notion
+
+on:
+  # 允許你從 Actions 標籤頁手動觸發此 workflow
+  workflow_dispatch:
+  
+  # 設定排程，使用 CRON 語法，此處為每小時的第 0 分執行一次
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 步驟 1: 取得你的程式碼
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 步驟 2: 設定 Python 環境
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # 你可以指定需要的 Python 版本
+
+      # 步驟 3: 安裝依賴套件
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 步驟 4: 執行 Python 腳本
+      - name: Run Python script
+        # 將 GitHub Secrets 注入到環境變數中
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: python main.py
