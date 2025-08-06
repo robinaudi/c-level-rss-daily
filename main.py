@@ -21,7 +21,9 @@ RSS_FEEDS = {
     "Harvard Business Review": "https://hbr.org/rss/regular",
     "Bloomberg": "https://www.bloomberg.com/opinion/authors/ARbTQlRLRjE/matthew-s-levine.rss",
     "TechCrunch": "https://techcrunch.com/feed/",
-    
+    "CFODive": "https://www.cfodive.com/rss/",
+    "Hacker News": "https://news.ycombinator.com/rss",
+    "Wall Street Journal": "https://feeds.content.dowjones.io/public/rss/RSSWSJD", 
 }
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 NOTION_API_URL = "https://api.notion.com/v1/"
