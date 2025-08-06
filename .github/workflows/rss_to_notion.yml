@@ -5,9 +5,14 @@ on:
   # 允許你從 Actions 標籤頁手動觸發此 workflow
   workflow_dispatch:
   
-  # 設定排程，使用 CRON 語法，此處為每小時的第 0 分執行一次
+  # 設定排程，每小時的第 0 分執行一次
+  # schedule:
+  #  - cron: '0 * * * *'
+
+  # 設定排程，按照「伺服器時間 (UTC)」每 4 小時一次
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 */4 * * *'
+  
 
 jobs:
   build:
