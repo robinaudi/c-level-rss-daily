@@ -107,7 +107,7 @@ def add_entry_to_notion(source: str, entry: dict, analysis: dict, reading_time: 
             "URL": {"url": link},
             "來源": {"select": {"name": source}},
             "發布時間": {"date": {"start": published_dt.isoformat()}},
-            "AI 摘要": {"rich_text": [{"text": {"content": "\n".join(str(x) for x in analysis.get("summary", []))[:2000]}}]}
+            "AI 摘要": {"rich_text": [{"text": {"content": "\n".join(str(x) for x in analysis.get("summary", []))[:2000]}}]},
             "關鍵字": {"multi_select": [{"name": kw} for kw in analysis.get("keywords", [])]},
             "閱讀時間(分)": {"number": reading_time},
             "情緒": {"select": {"name": analysis.get("sentiment", "N/A")} if analysis.get("sentiment") else None},
