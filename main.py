@@ -18,9 +18,10 @@ GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 MAX_ENTRIES_PER_RUN = int(os.getenv('MAX_ENTRIES_PER_RUN', '50'))
 
 RSS_FEEDS = {
+    "Harvard Business Review": "https://hbr.org/rss/regular",
     "Bloomberg": "https://www.bloomberg.com/opinion/authors/ARbTQlRLRjE/matthew-s-levine.rss",
     "TechCrunch": "https://techcrunch.com/feed/",
-    "Harvard Business Review": "https://hbr.org/rss/regular",
+    
 }
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 NOTION_API_URL = "https://api.notion.com/v1/"
