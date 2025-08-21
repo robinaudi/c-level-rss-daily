@@ -45,6 +45,7 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} 
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          LOG_DATABASE_ID: ${{ secrets.LOG_DATABASE_ID }}
 
         run: python main.py
